@@ -109,4 +109,7 @@ trials = 100
     #store a signle run as df
 stan_df <- tibble(trial = c(1:trials), matcher_choices, mismatcher_choices, outcomes_matcher, expected_values, learning_rate = rep(learning_rate, trials), bias = rep(bias, trials)) 
 
+
+
+write_csv(stan_df ,"stan_test_data.csv")
 ```
