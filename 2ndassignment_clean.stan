@@ -36,5 +36,15 @@ model {
   target += normal_lpdf(alpha_logit|0, 1.5);
   
   // Likelihood: How the data 'choice' depend on the parameter 'expected value'
-  target += bernoulli_logit_lpmf(choice|expected_value); //Indexing??
+  target += bernoulli_lpmf(choice|expected_value); //Indexing??
+}
+
+generated quantities {
+  // sample prior vals for alpha
+  real alpha_logit_prior = normal_rng(0, 1.5);
+  real<lower=0, upper=1> alpha_prior = inv_logit(alpha_logit_prior);
+  
+  
+  
+  
 }
