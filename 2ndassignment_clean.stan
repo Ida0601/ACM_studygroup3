@@ -75,4 +75,5 @@ generated quantities {
   for (i in 1:n) {
     posterior_choices[i] = bernoulli_rng(expected_value[i]);
   }
+  
 }
