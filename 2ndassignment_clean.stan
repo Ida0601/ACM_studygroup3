@@ -3,7 +3,7 @@ data {
   
   array[n] int<lower=0, upper=1> choice; //array "choice" of length n taking the value of either 0=left or 1=right 
   
-  array[n] int<lower=0, upper =1> reward; //array "reward" of length n taking the value of either 0=RL agent lost or 1=RL agent won 
+  array[n] int<lower=0, upper=1> reward; //array "reward" of length n taking the value of either 0=RL agent lost or 1=RL agent won 
 }
 
 parameters {
@@ -44,7 +44,11 @@ generated quantities {
   real alpha_logit_prior = normal_rng(0, 1.5);
   real<lower=0, upper=1> alpha_prior = inv_logit(alpha_logit_prior);
   
+  //posterior predictive check
+  array[n] int posterior_choices;
   
-  
-  
+  //draw choices from bernoulli
+  for (i in 1:n) {
+    posterior_choices[i] = bernoulli_rng(expected_value[i]);
+  }
 }
