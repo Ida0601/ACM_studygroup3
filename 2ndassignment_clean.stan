@@ -47,7 +47,7 @@ generated quantities {
   //posterior predictive check
   array[n] int posterior_choices;
   
-  //draw choices from bernoulli
+  //draw choices from bernoulli given the expected value
   for (i in 1:n) {
     posterior_choices[i] = bernoulli_rng(expected_value[i]);
   }
