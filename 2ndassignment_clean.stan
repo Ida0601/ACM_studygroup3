@@ -4,6 +4,10 @@ data {
   array[n] int<lower=0, upper=1> choice; //array "choice" of length n taking the value of either 0=left or 1=right 
   
   array[n] int<lower=0, upper =1> reward; //array "reward" of length n taking the value of either 0=RL agent lost or 1=RL agent won 
+
+  real prior_alpha_m; // we make the priors on alpha parameters that we can specify when calling the stan model ...
+  
+  real<lower = 0> prior_alpha_sd;
 }
 
 parameters {
@@ -33,7 +37,7 @@ transformed parameters {
 
 model {
   //Prior: Our belief about alpha before seeing the data
-  target += normal_lpdf(alpha_logit|0, 1.5);
+  target += normal_lpdf(alpha_logit|prior_alpha_m, prior_alpha_sd);
   
   // Likelihood: How the data 'choice' depend on the parameter 'expected value'
   target += bernoulli_lpmf(choice|expected_value); //Indexing??
@@ -41,7 +45,7 @@ model {
 
 generated quantities {
   // sample prior vals for alpha
-  real alpha_logit_prior = normal_rng(0, 1.5);
+  real alpha_logit_prior = normal_rng(prior_alpha_m, prior_alpha_sd);
   real<lower=0, upper=1> alpha_prior = inv_logit(alpha_logit_prior);
   
   

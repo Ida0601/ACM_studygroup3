@@ -1,6 +1,6 @@
 ---
 title: "fitmodel_assignment2"
-output: html_document
+# output: html_document
 ---
 
 ```{r}
@@ -10,12 +10,9 @@ library(cmdstanr)
 ```
 
 ```{r}
+# import simulation data
 data_raw <- read_csv("stan_test_data.csv")
-
-data_for_stan <- list(n = nrow(data_raw), choice = data_raw$matcher_choices, reward = data_raw$outcomes_matcher)
 ```
-
-
 ```{r}
 ## --- Compile and Fit ---
 # Specify model file path
@@ -26,7 +23,10 @@ stan_results_dir <- "fitted_models"
 model_file_RL <- here("2ndassigment_fitted.rds")
 
 if (!dir.exists(stan_results_dir)) dir.create(stan_results_dir)
+```
 
+```{r}
+# switch regenerate on/off
 regenerate_simulations = TRUE
 
 if (regenerate_simulations || !file.exists(model_file_RL)) {
@@ -38,7 +38,11 @@ if (regenerate_simulations || !file.exists(model_file_RL)) {
 
   # Sample from the posterior distribution using MCMC
   fit_RL <- mod_RL$sample(
-    data = data_for_stan,          # The data list we prepared
+    data = list(n = nrow(data_raw), 
+                      choice = data_raw$matcher_choices, 
+                      reward = data_raw$outcomes_matcher,
+                      prior_alpha_m = 0,
+                      prior_alpha_sd = 1.5),      
     seed = 123,                    # For reproducible MCMC sampling
     chains = 4,                    # Number of parallel Markov chains (recommend 4)
     parallel_chains = 4, # Run chains in parallel
@@ -59,6 +63,7 @@ if (regenerate_simulations || !file.exists(model_file_RL)) {
   cat("Loaded existing model fit from:", model_file_RL, "\n")
 }
 ```
+
 ```{r}
 # 2. Check R-hat and ESS metrics
 fit_summary <- fit_RL$summary(variables = "alpha")
@@ -66,10 +71,9 @@ print(fit_summary %>% select(variable, mean, rhat, ess_bulk, ess_tail))
 ```
 
 ```{r}
+# looking at the draws
 model_draws <- as_draws_df(fit_RL)
-```
-
-```{r}
-hist(model_draws)
+#model_draws
+hist(model_draws$alpha) # plotting alpha posterior; just to see that our draws object works
 ```
 
