@@ -6,10 +6,43 @@ date: "2026-03-19"
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-pacman::p_load(tidyverse, bayesplot, cmdstanr)
+pacman::p_load(here, cmdstanr, tidyverse, posterior, bayesplot, ggplot2)
+
 ```
 
 ```{r}
-fit_RL <- readRDS(model_file_RL)
+model_file_RL <- here("ACM_studygroup3", "fitted_models", "2ndassigment_fitted.rds")
+
+fit <- readRDS(model_file_RL)
+
+data_raw <- read_csv("stan_test_data.csv")
+
 ```
+
+```{r}
+# 1. Extract Prior and Posterior Replications
+draws_RL <- as_draws_df(fit_RL$draws())
+
+# 2. Wrangle for Comparison
+predictive_df <- tibble(
+  Value = c(draws_RL$prior_sum, draws_RL$post_sum),
+  Type = rep(c("Prior Predictive", "Posterior Predictive"), each = nrow(draws_RL))
+)
+
+# 3. Visualize Predictive Overlap
+
+ggplot(predictive_df, aes(x = Value, fill = Type)) +
+  geom_histogram(alpha = 0.6, color = "white") +
+  geom_vline(xintercept = sum(data_raw$matcher_choices), 
+             linetype = "dashed", linewidth = 1) +
+  scale_fill_manual(values = c("Prior Predictive" = "#ea801c", "Posterior Predictive" = "skyblue")) +
+  labs(title = "Prior & Posterior Predictive Checks: Total 'Right' Choices",
+       x = "Cumulative Count of Choices", y = "Density") +
+  theme_classic()+
+  theme(
+    #panel.grid.major = element_line(color = "gray80", size = 0.5),  # major grid lines
+    panel.grid.major = element_line(color = "gray90", size = 0.25)  # minor grid lines
+  )
+```
+
 
