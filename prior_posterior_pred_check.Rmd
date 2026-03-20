@@ -1,0 +1,15 @@
+---
+title: "prior_posterior_checks"
+output: html_document
+date: "2026-03-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(tidyverse, bayesplot, cmdstanr)
+```
+
+```{r}
+fit_RL <- readRDS(model_file_RL)
+```
+

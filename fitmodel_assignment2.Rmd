@@ -2,17 +2,27 @@
 title: "fitmodel_assignment2"
 # output: html_document
 ---
-
+# make the model
+## Load in data
 ```{r}
-pacman::p_load(here, cmdstanr, tidyverse, posterior)
+pacman::p_load(here, cmdstanr, tidyverse, posterior, bayesplot)
 
 library(cmdstanr)
 ```
+
+make figures folder if doesn't exist
+```{r}
+if (!dir.exists("figures")) dir.create("figures")
+```
+
 
 ```{r}
 # import simulation data
 data_raw <- read_csv("stan_test_data.csv")
 ```
+
+
+## Compile model
 ```{r}
 ## --- Compile and Fit ---
 # Specify model file path
@@ -63,17 +73,44 @@ if (regenerate_simulations || !file.exists(model_file_RL)) {
   cat("Loaded existing model fit from:", model_file_RL, "\n")
 }
 ```
+# choice 
+```{r}
+draws <- as_draws_df(fit_RL$draws())
+draws$pos
+```
+
+
+# Quality Assesment
+## Diagnostics
+
+```{r}
+fit_RL$diagnostic_summary()
+
+mcmc_trace(fit_RL$draws(), pars = "alpha")
+
+fit_summary
+```
+```{r}
+mcmc_rank_overlay(fit_RL$draws(), pars = "alpha")
+```
 
 ```{r}
 # 2. Check R-hat and ESS metrics
-fit_summary <- fit_RL$summary(variables = "alpha")
-print(fit_summary %>% select(variable, mean, rhat, ess_bulk, ess_tail))
+fit_summary <- fit_RL$summary(variables = c("alpha", "alpha_prior"))
+fit_summary %>% select(variable, mean, rhat, ess_bulk, ess_tail)
+```
+## Prior-Posterior Update for Alpha
+```{r}
+#make long format of draws
+draws <- as_draws_df(fit_RL$draws()) %>% 
+  select(alpha, alpha_prior) %>% 
+  pivot_longer(cols = c(alpha, alpha_prior))
+
+#use them to plot densities
+ggplot(draws, aes(x=value, fill = name)) +
+  geom_density(alpha = .3) +
+  geom_vline(xintercept = .2, linetype = "dashed") + 
+  theme_classic()
 ```
 
-```{r}
-# looking at the draws
-model_draws <- as_draws_df(fit_RL)
-#model_draws
-hist(model_draws$alpha) # plotting alpha posterior; just to see that our draws object works
-```
 
