@@ -87,11 +87,11 @@ generated quantities {
   // Log-likelihoods
   vector[n] log_lik;
   for (trial in 1:n) {
-    log_lik[trial] = bernoulli_lpmf(choice[trial] | expected_value[trial]));
+    log_lik[trial] = bernoulli_lpmf(choice[trial] | expected_value[trial]);
   }
 
   // 2. Total Log-Prior (for Sensitivity/Update analysis)
-  real lprior = normal_lpdf(alpha | prior_alpha_m, prior_alpha_sd)
-}
+  real lprior = normal_lpdf(alpha | prior_alpha_m, prior_alpha_sd);
+
   
 }
