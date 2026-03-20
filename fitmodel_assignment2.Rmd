@@ -1,6 +1,6 @@
 ---
 title: "fitmodel_assignment2"
-output: html_document
+# output: html_document
 ---
 # make the model
 ## Load in data
@@ -17,9 +17,8 @@ if (!dir.exists("figures")) dir.create("figures")
 
 
 ```{r}
+# import simulation data
 data_raw <- read_csv("stan_test_data.csv")
-
-data_for_stan <- list(n = nrow(data_raw), choice = data_raw$matcher_choices, reward = data_raw$outcomes_matcher)
 ```
 
 
@@ -34,7 +33,10 @@ stan_results_dir <- "fitted_models"
 model_file_RL <- here("2ndassigment_fitted.rds")
 
 if (!dir.exists(stan_results_dir)) dir.create(stan_results_dir)
+```
 
+```{r}
+# switch regenerate on/off
 regenerate_simulations = TRUE
 
 if (regenerate_simulations || !file.exists(model_file_RL)) {
@@ -46,7 +48,11 @@ if (regenerate_simulations || !file.exists(model_file_RL)) {
 
   # Sample from the posterior distribution using MCMC
   fit_RL <- mod_RL$sample(
-    data = data_for_stan,          # The data list we prepared
+    data = list(n = nrow(data_raw), 
+                      choice = data_raw$matcher_choices, 
+                      reward = data_raw$outcomes_matcher,
+                      prior_alpha_m = 0,
+                      prior_alpha_sd = 1.5),      
     seed = 123,                    # For reproducible MCMC sampling
     chains = 4,                    # Number of parallel Markov chains (recommend 4)
     parallel_chains = 4, # Run chains in parallel

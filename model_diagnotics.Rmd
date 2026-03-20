@@ -1,0 +1,92 @@
+---
+title: "model_diagnotics"
+author: "Study group 3"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Set-up
+
+```{r}
+pacman::p_load(here, cmdstanr, tidyverse, posterior, bayesplot, rethinking)
+
+library(cmdstanr)
+```
+
+```{r}
+# import simulation data
+data_raw <- read_csv("stan_test_data.csv")
+
+# import model fit
+fit <- readRDS("2ndassigment_fitted.rds")
+```
+
+# Basic model diagnostics
+
+We will do the following checks: 
+
+Visual
+- Chain mixing (trace plots)
+
+Numeric
+- Divergent Transitions
+- E-BFMI (Energy-Bayesian Fraction of Missing Information); below 0.3 is bad news
+- Convergence checks (Rhats < 1.01)
+- Effective Sample Size checks (ESS > 400, both bulk and tail)
+
+```{r}
+# trace plot of alpha
+
+# getting draws from the model
+draws <- fit$draws(variables = "alpha")
+bayesplot::mcmc_trace(draws)
+```
+It looks nicely random!
+
+Numeric checks:
+To make sure everything is ok, we can use Riccardo's diagnostic battery from the course notes:
+
+```{r}
+# creating summaries
+fit_summary <- fit$summary()
+diagnostic_summary <- fit$diagnostic_summary()
+
+# 1. Checking divergences
+divergences <- sum(diagnostic_summary$num_divergent)
+if (divergences > 0) {
+  stop(paste("CRITICAL FAILURE:", divergences, "divergences detected. The posterior geometry is pathological. Reparameterization required. Do not interpret these results."))
+}
+
+# 2. Check E-BFMI (Energy-Bayesian Fraction of Missing Information)
+# Threshold is typically 0.3. Values below this indicate poor exploration.
+min_ebfmi <- min(diagnostic_summary$ebfmi)
+if (min_ebfmi < 0.3) {
+  warning(paste("WARNING: Low E-BFMI detected (Min =", round(min_ebfmi, 3), 
+                "). The sampler may struggle to explore the tails of the posterior."))
+}
+
+# 3. Check for Convergence (Rhat < 1.01)
+max_rhat <- max(fit_summary$rhat, na.rm = TRUE)
+if (max_rhat > 1.01) {
+  stop(paste("CRITICAL FAILURE: Chains did not converge. Max Rhat =", round(max_rhat, 3)))
+}
+
+# 4. Check Effective Sample Size (ESS > 400 for both bulk and tail)
+min_ess_bulk <- min(fit_summary$ess_bulk, na.rm = TRUE)
+min_ess_tail <- min(fit_summary$ess_tail, na.rm = TRUE)
+if (min_ess_bulk < 400 || min_ess_tail < 400) {
+  warning("WARNING: Insufficient Effective Sample Size. Autocorrelation is too high. Run longer chains.")
+}
+```
+
+We can also plot the different diagnostics for an intuitive overview:
+
+```{r}
+print(diagnostic_summary)
+hist(diagnostic_summary$ebfmi, xlim = c(0.3,max(diagnostic_summary$ebfmi)))
+hist(fit_summary$rhat, xlim = c(min(fit_summary$rhat, na.rm = TRUE),1.01))
+hist(fit_summary$ess_bulk, xlim = c(400, max(fit_summary$ess_bulk, na.rm = TRUE)+100))
+```
+No indication of problems with this initial fit!
+
+
