@@ -8,14 +8,14 @@ data {
   array[n] int<lower=0, upper=1> reward; //array "reward" of length n taking the value of either 0=RL agent lost or 1=RL agent won 
   
   // define alpha priors (mean and sd) that we can specify when calling the stan model
-  real prior_alpha_m; // mean prior_alpha is a continous number (real)
+  real prior_alpha_m; // mean prior_alpha is a continuous number (real)
 
-  real<lower = 0> prior_alpha_sd; // sd prior_alpha is a continous number that cannot be lower than 0
+  real<lower = 0> prior_alpha_sd; // sd prior_alpha is a continuous number that cannot be lower than 0
 }
 
 // Define the parameters of the model
 parameters {
-  real alpha_logit; // Learning rate aLpha_logit is a continous number
+  real alpha_logit; // Learning rate alpha_logit is a continuous number
 }
 
 // Define the transformed parameters and model formular
@@ -49,7 +49,7 @@ transformed parameters {
 // Define the distributions from which our model should assume the data comes from 
 model {
   //Prior: Our belief about alpha before seeing the data
-  target += normal_lpdf(alpha_logit|prior_alpha_m, prior_alpha_sd); //The log of the normal density of alpha given alpha mu and sd
+  target += normal_lpdf(alpha_logit|prior_alpha_m, prior_alpha_sd); //The log of the normal density of alpha given prior alpha mu and sd
 
   // Likelihood: How the data 'choice' depend on the parameter 'expected value'
   target += bernoulli_lpmf(choice|expected_value); //The log Bernoulli probability mass of choice given probability of EV
@@ -67,7 +67,7 @@ generated quantities {
   // Identical to the transformed parameters block, but using alpha_prior instead
   array[n] real expected_value_prior; 
   
-  expected_value_prior[1] = 0.5; /
+  expected_value_prior[1] = 0.5; 
   
   real feedback_prior; 
   
@@ -84,14 +84,14 @@ generated quantities {
   }
   
   // Simulate data based only on the prior distribution.
-  // array choice_prior_rep of lenght n where each element is a Bernoulli draw with probability of EV prior
+  // array choice_prior_rep of length n where each element is a Bernoulli draw with probability of EV prior
   array[n] int choice_prior_rep = bernoulli_rng(expected_value_prior);  
     
   // Summary: Cumulative Choice Rate
   int prior_sum = sum(choice_prior_rep); 
   
   // ------- Posterior Predictive Check -------
-  array[n] int posterior_choices; //define array posterior_choices of lenght n
+  array[n] int posterior_choices; //define array posterior_choices of length n
   
   //draw choices from bernoulli given the expected value
   for (trial in 1:n) {
@@ -109,7 +109,6 @@ generated quantities {
   }
 
   // Total Log-Prior (for Sensitivity/Update analysis)
-  real lprior = normal_lpdf(alpha | prior_alpha_m, prior_alpha_sd); //Compute the log of the normal density of alpha given alpha mu and sd
+  real lprior = normal_lpdf(alpha_logit | prior_alpha_m, prior_alpha_sd); //Compute the log of the normal density of alpha_logit given alpha mu and sd
 
-  
 }
