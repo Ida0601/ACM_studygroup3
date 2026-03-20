@@ -76,4 +76,19 @@ generated quantities {
     posterior_choices[i] = bernoulli_rng(expected_value[i]);
   }
   
+  //Summary Statistics
+  int post_sum = sum(posterior_choices); 
+
+  
+  // Log-likelihoods
+  vector[n] log_lik;
+  for (trial in 1:n) {
+    log_lik[trial] = bernoulli_lpmf(choice[trial] | expected_value[trial]));
+  }
+
+  // 2. Total Log-Prior (for Sensitivity/Update analysis)
+  real lprior = normal_lpdf(bias | prior_bias_m, prior_bias_s) + 
+                normal_lpdf(beta | prior_beta_m, prior_beta_s);
+}
+  
 }
