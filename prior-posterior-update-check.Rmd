@@ -1,0 +1,122 @@
+---
+title: "prior-posterior-update-check"
+author: "Christian Stenbro"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# set-up
+
+```{r}
+pacman::p_load(here, cmdstanr, tidyverse, posterior, bayesplot, rethinking)
+```
+
+```{r}
+# import simulation data
+data_raw <- read_csv("stan_test_data.csv")
+
+# import model fit
+fit <- readRDS("2ndassigment_fitted.rds")
+```
+# reasoning about prior-posterior update check
+
+The goal is to investigate the relationship between the prior and the posterior. Concretely, we ask the following:
+
+- Has the data been informative, meaning, *is the posterior distribution visually narrower than the prior distribution?*
+- Is the prior too restrictive, meaning, *is the posterior distribution's mean different from the prior distribution's mean?*
+
+The way we do this is by visualizing the marginal posterior distribution against the marginal prior distribution. The code is based on ch. 6 in Riccardo's book:
+
+```{r}
+# First, we extract the draws from the samples
+draws <- as_draws_df(fit$draws())
+```
+
+```{r}
+# Then, we define the ground truth for our estimand, alpha (the RL model learning rate. 
+# This was set in our simulation to 0.2
+true_alpha_prob <- 0.2
+true_alpha_logit <- qlogis(true_alpha_prob) # notice that we are working in both the constrained cognitive space and the unlimited logit space simultaneously 
+```
+
+```{r}
+# Unconstrained logit space
+# Extracting the marginal prior and posterior distributions for alpha logit
+update_logit_df <- tibble(
+  parameter_value = c(draws$alpha_logit_prior, draws$alpha_logit),
+  distribution = factor(
+    rep(c("Prior", "Posterior"), each = nrow(draws)),
+    levels = c("Prior", "Posterior") # these will be labels, needed for plotting
+  )
+)
+```
+
+```{r}
+# lets look at the result
+head(update_logit_df)
+update_logit_df[10000:1010,] # just to check that we have posterior samples as well
+```
+```{r}
+# plotting the marginal prior/posterior distribution in the unconstrained space
+p_update_logit <- ggplot(update_logit_df, aes(x = parameter_value, fill = distribution)) +
+  geom_density(alpha = 0.6, color = "white") +
+  geom_vline(xintercept = true_alpha_logit, color = "black", linetype = "dashed", linewidth = 1) +
+  scale_fill_manual(values = c("Prior" = "#ffbaba", "Posterior" = "skyblue")) +
+  ggtitle("Prior-Posterior Update: Log-Odds Scale",
+          subtitle = "Healthy = posterior (blue) narrower than prior (red), shifted toward true value (dashed)") +
+  xlab(expression(alpha[logit] ~ " (Log-Odds)")) +
+  ylab("Marginal Density") +
+  annotate(
+    "text", x = true_alpha_logit, y = Inf, 
+    label = sprintf("Ground Truth = %s (round = 2)", round(true_alpha_logit, 2)), 
+    vjust = 2, hjust = if (true_alpha_logit > 0) 1.1 else -0.1, 
+    size = 4, fontface = "bold"
+  ) +
+  theme_classic() +
+  theme(
+    legend.position = "bottom", 
+    legend.title = element_blank(),
+    legend.text = element_text(size = 12)
+  )
+
+print(p_update_logit)
+```
+```{r}
+# Making a similar plot in the constrained (probability) range
+
+# Extracting the marginal prior and posterior distributions for alpha
+update_prob_df <- tibble(
+  parameter_value = c(draws$alpha_prior, draws$alpha),
+  distribution = factor(
+    rep(c("Prior", "Posterior"), each = nrow(draws)),
+    levels = c("Prior", "Posterior") # these will be labels, needed for plotting
+  )
+)
+
+# Plotting the marginal prior/posterior distribution in the constrained space
+p_update_prob <- ggplot(update_prob_df, aes(x = parameter_value, fill = distribution)) +
+  geom_density(alpha = 0.6, color = "white") +
+  geom_vline(xintercept = true_alpha_prob, color = "black", linetype = "dashed", linewidth = 1) +
+  scale_fill_manual(values = c("Prior" = "#ffbaba", "Posterior" = "skyblue")) +
+  ggtitle("Prior-Posterior Update: Constrained Scale",
+          subtitle = "Healthy = posterior (blue) narrower than prior (red), shifted toward true value (dashed)") +
+  xlab(expression(alpha ~ " (Probability)")) +
+  ylab("Marginal Density") +
+  annotate(
+    "text", x = true_alpha_prob, y = Inf, 
+    label = sprintf("Ground Truth = %s", true_alpha_prob), 
+    vjust = 2, hjust = -0.1, 
+    size = 4, fontface = "bold"
+  ) +
+  theme_classic() +
+  theme(
+    legend.position = "bottom", 
+    legend.title = element_blank(),
+    legend.text = element_text(size = 12)
+  )
+
+print(p_update_prob)
+
+```
+
+Plots are interpreted in the report. One note: The prior is cut of at the limits, but I think that is expected behaviour, exactly since we are in the constrained space. However, I am surprised by how artificial this cut-off appears.

@@ -35,16 +35,22 @@ Numeric
 - Effective Sample Size checks (ESS > 400, both bulk and tail)
 
 ```{r}
-# trace plot of alpha
+# trace plot of alpha and alpha_logit
 
 # getting draws from the model
-draws <- fit$draws(variables = "alpha")
-bayesplot::mcmc_trace(draws)
+draws <- fit$draws(variables = c("alpha_logit", "alpha"))
+bayesplot::mcmc_trace(draws) +
+  labs(title = "Traceplots for MCMC sampling", x = "Sample", y = expression(alpha))
 ```
 It looks nicely random!
 
 Numeric checks:
 To make sure everything is ok, we can use Riccardo's diagnostic battery from the course notes:
+
+```{r}
+fit_summary
+```
+
 
 ```{r}
 # creating summaries
@@ -88,5 +94,7 @@ hist(fit_summary$rhat, xlim = c(min(fit_summary$rhat, na.rm = TRUE),1.01))
 hist(fit_summary$ess_bulk, xlim = c(400, max(fit_summary$ess_bulk, na.rm = TRUE)+100))
 ```
 No indication of problems with this initial fit!
+
+We should probably do this for a 1000 fits though.. But maybe that is a part of later steps?
 
 
