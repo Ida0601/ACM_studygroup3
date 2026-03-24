@@ -10,7 +10,7 @@ output: html_document
 # devtools::install_github("hyunjimoon/SBC")
 
 #load packages
-pacman::p_load(tidyverse, cmdstanr, bayesplot, SBC, future)
+pacman::p_load(tidyverse, cmdstanr, bayesplot, SBC, future, kableExtra, webshot2)
 ```
 
 ## SBC Guide
@@ -144,11 +144,12 @@ Then run simulations using backend and generator. Since this is expensive note t
 ```{r}
 ### config
 n_sims = 400 # 100 = 1min    on M1 macbook air
-regen_flag = F
+regen_flag = T
 
 
 #make file place to store sbc results
 sbc_results_file <- file.path("fitted_models/sbc_results.rds")
+sbc_data_file <- file.path("fitted_models/sbc_data.rds")
 
 #check if file exists. If not, run sims
 sim_results_exists <- file.exists(sbc_results_file)
@@ -169,11 +170,13 @@ if (!sim_results_exists | regen_flag){
   
   #save object
   saveRDS(sbc_results, sbc_results_file)
+  saveRDS(sbc_datasets, sbc_data_file )
   
 } else { #Otherwise just load in the saved results
   
   print("loading existing file")
 sbc_results <- readRDS(sbc_results_file)
+sbc_datasets <- readRDS(sbc_data_file)
 }
   
 ```
@@ -217,9 +220,29 @@ ggplot(alpha_results, aes(x=simulated_value, y = median, color = ci_width)) +
   #make it pretty
   theme_classic() +
   theme(legend.position = "bottom") +                                  
-  labs(color = "95% CI width", x = "Fitted Alpha", y = "True Alpha")  
+  labs(color = "90% CI width", x = "Fitted Alpha", y = "True Alpha")  
 
 ggsave("figures/param_recov_plot.png")
+
+```
+Also compute recovery stats according to course notes.
+
+```{r}
+                                                   
+summary_stats <- alpha_results %>%
+  group_by(n_trials) %>% 
+  summarize(
+    Pearson_r  = cor(simulated_value, median),
+    RMSE       = sqrt(mean((simulated_value - median)^2)),
+    coverage90 = mean(simulated_value >= q5 & simulated_value <= q95)
+  ) 
+
+
+
+knitr::kable(summary_stats, digits    = 3,
+    col.names = c("N", "Pearson r", "RMSE", "Empirical 90% CI Coverage")) %>%                          
+    kable_styling() %>%
+    save_kable("figures/param_recov_table.png")
 
 ```
 
