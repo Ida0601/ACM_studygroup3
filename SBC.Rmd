@@ -144,7 +144,7 @@ Then run simulations using backend and generator. Since this is expensive note t
 ```{r}
 ### config
 n_sims = 400 # 100 = 1min    on M1 macbook air
-regen_flag = T
+regen_flag = F
 
 
 #make file place to store sbc results
@@ -181,18 +181,33 @@ sbc_datasets <- readRDS(sbc_data_file)
   
 ```
 
-After running sims, we plot the results.
+After running sims, we plot the rank histogram and ECDF separately for each n_trials value.
 
-```{r}
-plot_rank_hist(sbc_results, variables = "alpha") +
-  theme_classic()
-ggsave("figures/sbc_rank_hist.png")
-```
-We can also plot the emperical CDF against the theoretical uniform
-```{r}
-plot_ecdf(sbc_results, variables = "alpha") +
-  theme_classic()
-ggsave("figures/sbc_ecdf.png")
+```{r results='asis'}
+# map each sim_id to its n_trials
+sim_n <- sapply(seq_along(sbc_datasets$generated), function(i) sbc_datasets$generated[[i]]$n)
+
+
+#loop over each
+for (n in c(10, 25, 50, 100)) {
+
+  sim_ids <- which(sim_n == n)
+  filtered_stats <- sbc_results$stats %>% filter(sim_id %in% sim_ids)
+
+  p_rank <- plot_rank_hist(filtered_stats, variables = "alpha") +
+    theme_classic() +
+    ggtitle(paste("n =", n))
+
+  p_ecdf <- plot_ecdf(filtered_stats, variables = "alpha") +
+    theme_classic() +
+    ggtitle(paste("n =", n))
+
+  print(p_rank)
+  ggsave(paste0("figures/sbc_rank_hist_n", n, ".png"), p_rank)
+
+  print(p_ecdf)
+  ggsave(paste0("figures/sbc_ecdf_n", n, ".png"), p_ecdf)
+}
 ```
 
 
@@ -220,7 +235,7 @@ ggplot(alpha_results, aes(x=simulated_value, y = median, color = ci_width)) +
   #make it pretty
   theme_classic() +
   theme(legend.position = "bottom") +                                  
-  labs(color = "90% CI width", x = "Fitted Alpha", y = "True Alpha")  
+  labs(color = "90%-CI Width", x = "Fitted Alpha", y = "True Alpha")  
 
 ggsave("figures/param_recov_plot.png")
 
@@ -228,7 +243,7 @@ ggsave("figures/param_recov_plot.png")
 Also compute recovery stats according to course notes.
 
 ```{r}
-                                                   
+#compute summary stats for param recov                                             
 summary_stats <- alpha_results %>%
   group_by(n_trials) %>% 
   summarize(
@@ -237,13 +252,17 @@ summary_stats <- alpha_results %>%
     coverage90 = mean(simulated_value >= q5 & simulated_value <= q95)
   ) 
 
+#make table
+table <- kable(summary_stats, digits    = 3,
+    col.names = c("N", "Pearson r", "RMSE", "Empirical 90% CI Coverage"))
 
-
-knitr::kable(summary_stats, digits    = 3,
-    col.names = c("N", "Pearson r", "RMSE", "Empirical 90% CI Coverage")) %>%                          
+#save it
+table %>%                          
     kable_styling() %>%
     save_kable("figures/param_recov_table.png")
 
+#show it
+table
 ```
 
 
