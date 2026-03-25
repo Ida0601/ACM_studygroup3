@@ -43,6 +43,9 @@ ggplot(predictive_df, aes(x = Value, fill = Type)) +
     #panel.grid.major = element_line(color = "gray80", size = 0.5),  # major grid lines
     panel.grid.major = element_line(color = "gray90", size = 0.25)  # minor grid lines
   )
+
+ggsave('figures/prior_and_post_pred_check.png', width = 8, height = 6, dpi = 300)
+
 ```
 
 
