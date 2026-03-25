@@ -1,0 +1,181 @@
+---
+title: "Untitled"
+output: html_document
+date: "2026-02-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#load packages
+pacman::p_load(tidyverse)
+```
+
+
+We set up two types of agents. One is biased agent. It plays $1$ with fixed probability $p$. It is just a bernoulli draw. 
+
+```{r}
+biased_agent <- function(p){
+  
+  #return bernoulli flip
+  choice <- rbinom(1,1,p)
+  
+  return(choice)
+}
+```
+
+
+The following sets up a rl agent
+```{r}
+# where v is expected value of playing right
+rl_agent_no_soft_max <- function(v_prev, choice_prev, outcome_prev, lr) {
+
+  ## Get the right PE ## 
+  #if last choice was right just the outcome as feedback
+  if (choice_prev == 1){
+    feedback = outcome_prev
+  } 
+  
+  #otherwise flip outcome, so its used 
+  else {
+    feedback = 1 - outcome_prev
+  }
+  
+  #get pe
+  PE = feedback - v_prev
+  
+  #update expected value of playing right
+  v_curr <- v_prev + lr*PE
+  
+  
+  choice <- rbinom(1, 1, v_curr)
+  
+  
+  #return results as named values
+  return(list(choice = choice, v_curr = v_curr))
+}
+```
+
+
+CS comment: We can modify this to create a simple prior predictive check. Let's pull our learning rates from the priors instead:
+
+```{r}
+alpha_mean = 0
+alpha_sd = 1.5
+
+alpha_prior_logit = rnorm(1, alpha_mean, alpha_sd)
+alpha_prior = plogis(alpha_prior_logit)
+print(alpha_prior)
+```
+
+```{r}
+# Define static parameters
+alpha_mean = 0
+alpha_sd = 1.5
+bias = .2
+experiments = 1000
+trials = 100 # trials within experiments
+
+# set up a list to store results (what are we storing?)
+results <- list()
+
+# Run 100 experiments of 100 trial
+for (i in 1:experiments){
+  
+  # sample new learning rates for each experiment
+  alpha_prior_logit = rnorm(1, alpha_mean, alpha_sd)
+  alpha_prior = plogis(alpha_prior_logit)
+  learning_rate = alpha_prior
+
+  # Run 100 trials of rl agent vs biased agent
+
+    ## Prep vectors
+    #prep vector with expected vals of playing 1 for the RL agent
+    expected_values = c(.5)
+    
+    #prep vector for matcher (RL agent)
+    matcher_choices = c(1)
+    
+    #prep vector for mismatcher
+    mismatcher_choices = c(biased_agent(bias))
+    
+    #prep outcomes vector for matcher
+    outcomes_matcher = c(if_else(mismatcher_choices [1] == matcher_choices[1],  1, 0))
+    
+    #loop through trials
+      for (t in 2:trials){
+      
+        ## Biased agent. MISMATCHER
+        mismatcher_choice <- biased_agent(bias)
+        mismatcher_choices <- c(mismatcher_choices, mismatcher_choice)
+        
+        ## RL part: MATCHER
+        #get vals for previous trial for RL
+        outcome_prev = outcomes_matcher[t-1]
+        choice_prev = matcher_choices[t-1]
+        expected_value_prev = expected_values[t-1]
+        
+        #make choice for rl agent
+        result <- rl_agent_no_soft_max(expected_value_prev, choice_prev, outcome_prev, learning_rate)
+        
+        matcher_choice <- result$choice
+        v_curr  <- result$v_curr
+        
+        #store choices and expected values
+        matcher_choices <- c(matcher_choices, matcher_choice)
+        expected_values <- c(expected_values, v_curr)
+      
+        #get outcome at current trial and store
+        outcome_matcher <- if_else(matcher_choice == mismatcher_choice, 1, 0)
+        outcomes_matcher <- c(outcomes_matcher, outcome_matcher)
+      } 
+    
+#store a signle run as df
+results[[i]] <- tibble(trial = c(1:trials), 
+                     matcher_choices, 
+                     mismatcher_choices, 
+                     outcomes_matcher, 
+                     expected_values, 
+                     learning_rate = rep(learning_rate, trials), 
+                     bias = rep(bias, trials)
+                     ) 
+}
+
+#write_csv(stan_df ,"stan_test_data.csv")
+
+# computing statistics
+right_choices_sum <- numeric(experiments) 
+learning_rate_copy <- numeric(experiments)
+longest_run <- numeric(experiments)
+
+for (i in 1:experiments) {
+  
+  longest_run[i] <- max(rle(results[[i]]$matcher_choices)$lengths)
+  right_choices_sum[i] <- sum(results[[i]]$matcher_choices)
+  learning_rate_copy[i] <- unique(results[[i]]$learning_rate) # this is bad practice but works since they are all the same for each experiment...
+  
+}
+
+# plotting
+hist(right_choices_sum, 
+     xlim=c(0,100),
+     ylab = "Sum of Right Choices",
+     title=paste("Prior Predictive Check, Prior SD = ", alpha_sd)
+     )
+```
+
+
+
+
+
+
+
+```{r}
+plot(x = longest_run, y = learning_rate_copy)
+```
+```{r}
+longest_run
+```
+
