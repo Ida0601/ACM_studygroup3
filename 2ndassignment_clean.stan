@@ -5,7 +5,7 @@ data {
   
   array[n] int<lower=0, upper=1> choice; //array "choice" of length n taking the value of either 0=left or 1=right 
   
-  array[n] int<lower=0, upper=1> other; //array "reward" of length n taking the value of either 0=opponent played left or 1= opponent played right
+  array[n] int<lower=0, upper=1> other; //array "other" of length n taking the value of either 0=opponent played left or 1= opponent played right
   
   // define alpha priors (mean and sd) that we can specify when calling the stan model
   real prior_alpha_m; // mean prior_alpha is a continuous number (real)
@@ -14,7 +14,7 @@ data {
 }
 
 transformed data {
-  array[n] int reward; // reward is an integer
+  array[n] int reward; //array "reward" of length n 
 
   // for-loop calculating reward for each trial
   for (trial in 1:n) { // starting 
@@ -80,17 +80,18 @@ generated quantities {
   real<lower=0, upper=1> alpha_prior = inv_logit(alpha_logit_prior); //transform alpha_logit_prior to be between 0 and 1 using the inverse logit function
   
   //  ------- Prior Predictive Check Simulation ------- 
-  // Identical to the transformed parameters block, but using alpha_prior instead
-  array[n] int reward_prior;
+  // Simulate data based on the prior distribution
+  // Similar to the transformed parameters block, but using alpha_prior instead
+  
+  array[n] int reward_prior; //Defining reward_prior as this should be updated accodording to the simulated choices
   
   array[n] real expected_value_prior;
   
-  array[n] int choice_prior;
+  array[n] int choice_prior; //Array of lenght n, to store all simulated choices
   
-  int longest_streak = 1;
-  
+  //Defining the first trial values
   expected_value_prior[1] = 0.5; 
-  choice_prior[1] = 1;
+  choice_prior[1] = 1; 
   reward_prior[1] = 1;
   
   real feedback_prior; 
@@ -107,24 +108,16 @@ generated quantities {
 
     expected_value_prior[trial] = expected_value_prior[trial-1] + alpha_prior * (feedback_prior - expected_value_prior[trial-1]);
     
+    //Each simualted choice is a Bernoulli draw with probability of EV prior
     choice_prior[trial] = bernoulli_rng(expected_value_prior[trial]);
     
+    //Calculate reward for the trial 
     if (choice_prior[trial] == other[trial])
       reward_prior[trial] = 1;
     else 
       reward_prior[trial]= 0;
-      
-    if (choice_prior[trial] == choice_prior[trial-1])
-      longest_streak = longest_streak + 1;
-    else 
-      longest_streak = 1; 
-    
   }
   
-  // Simulate data based only on the prior distribution.
-  // array choice_prior_rep of length n where each element is a Bernoulli draw with probability of EV prior
-  //array[n] int choice_prior_rep = bernoulli_rng(expected_value_prior);  
-    
   // Summary: Cumulative Choice Rate
   int prior_sum = sum(choice_prior); 
   
