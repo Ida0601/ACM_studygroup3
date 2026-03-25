@@ -5,12 +5,28 @@ data {
   
   array[n] int<lower=0, upper=1> choice; //array "choice" of length n taking the value of either 0=left or 1=right 
   
-  array[n] int<lower=0, upper=1> reward; //array "reward" of length n taking the value of either 0=RL agent lost or 1=RL agent won 
+  array[n] int<lower=0, upper=1> other; //array "reward" of length n taking the value of either 0=opponent played left or 1= opponent played right
   
   // define alpha priors (mean and sd) that we can specify when calling the stan model
   real prior_alpha_m; // mean prior_alpha is a continuous number (real)
 
   real<lower = 0> prior_alpha_sd; // sd prior_alpha is a continuous number that cannot be lower than 0
+}
+
+transformed data {
+  array[n] int reward; // reward is an integer
+
+  // for-loop calculating reward for each trial
+  for (trial in 1:n) { // starting 
+    
+  //if the RL agent (the matcher) played the same as the opponent, then reward is 1.
+    if (choice[trial] == other[trial])
+      reward[trial] = 1;
+      
+  // if the RL agent (the matcher) didn't play the same as the opponent, then reward is 0.
+    else
+      reward[trial]= 0;   
+  }
 }
 
 // Define the parameters of the model
@@ -32,12 +48,12 @@ transformed parameters {
   for (trial in 2:n) { // starting 
     
   //if the RL agent (the matcher) played left on the previous trial, then 
-  // feedback is 1 if the opponent also played left and 0 if they played right.
+  // feedback is 0 if the reward was 1 (reinforcing left choice)
     if (choice[trial-1] == 0)
       feedback = 1 - reward[trial-1];
       
   // if the RL agent (the matcher) played right on the previous trial, then 
-  // feedback is 1 if the opponent also played right and 0 if they played left.
+  // feedback is 1 if the reward was 1 (reinforcing right)
     else
       feedback = reward[trial-1];
   
@@ -65,30 +81,52 @@ generated quantities {
   
   //  ------- Prior Predictive Check Simulation ------- 
   // Identical to the transformed parameters block, but using alpha_prior instead
-  array[n] real expected_value_prior; 
+  array[n] int reward_prior;
+  
+  array[n] real expected_value_prior;
+  
+  array[n] int choice_prior;
+  
+  int longest_streak = 1;
   
   expected_value_prior[1] = 0.5; 
+  choice_prior[1] = 1;
+  reward_prior[1] = 1;
   
   real feedback_prior; 
   
   // for-loop
   for (trial in 2:n) {
     //if the agent plays left:
-    if (choice[trial-1] == 0)
-      feedback_prior = 1 - reward[trial-1];
+    if (choice_prior[trial-1] == 0)
+      feedback_prior = 1 - reward_prior[trial-1];
+      
     //if the agent plays right:
     else
-      feedback_prior = reward[trial-1];
+      feedback_prior = reward_prior[trial-1];
 
     expected_value_prior[trial] = expected_value_prior[trial-1] + alpha_prior * (feedback_prior - expected_value_prior[trial-1]);
+    
+    choice_prior[trial] = bernoulli_rng(expected_value_prior[trial]);
+    
+    if (choice_prior[trial] == other[trial])
+      reward_prior[trial] = 1;
+    else 
+      reward_prior[trial]= 0;
+      
+    if (choice_prior[trial] == choice_prior[trial-1])
+      longest_streak = longest_streak + 1;
+    else 
+      longest_streak = 1; 
+    
   }
   
   // Simulate data based only on the prior distribution.
   // array choice_prior_rep of length n where each element is a Bernoulli draw with probability of EV prior
-  array[n] int choice_prior_rep = bernoulli_rng(expected_value_prior);  
+  //array[n] int choice_prior_rep = bernoulli_rng(expected_value_prior);  
     
   // Summary: Cumulative Choice Rate
-  int prior_sum = sum(choice_prior_rep); 
+  int prior_sum = sum(choice_prior); 
   
   // ------- Posterior Predictive Check -------
   array[n] int posterior_choices; //define array posterior_choices of length n
