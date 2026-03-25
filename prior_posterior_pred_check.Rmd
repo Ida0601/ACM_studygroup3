@@ -18,6 +18,9 @@ fit <- readRDS(model_file_RL)
 data_raw <- read_csv("stan_test_data.csv")
 
 ```
+```{r}
+
+```
 
 ```{r}
 # 1. Extract Prior and Posterior Replications
@@ -32,7 +35,7 @@ predictive_df <- tibble(
 # 3. Visualize Predictive Overlap
 
 ggplot(predictive_df, aes(x = Value, fill = Type)) +
-  geom_histogram(alpha = 0.6, color = "white") +
+  geom_histogram(position = "identity",alpha = 0.6, color = "white") +
   geom_vline(xintercept = sum(data_raw$matcher_choices), 
              linetype = "dashed", linewidth = 1) +
   scale_fill_manual(values = c("Prior Predictive" = "#ea801c", "Posterior Predictive" = "skyblue")) +
@@ -44,5 +47,6 @@ ggplot(predictive_df, aes(x = Value, fill = Type)) +
     panel.grid.major = element_line(color = "gray90", size = 0.25)  # minor grid lines
   )
 ```
+
 
 
