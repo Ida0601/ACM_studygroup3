@@ -18,9 +18,6 @@ fit <- readRDS(model_file_RL)
 data_raw <- read_csv("stan_test_data.csv")
 
 ```
-```{r}
-
-```
 
 ```{r}
 # 1. Extract Prior and Posterior Replications
