@@ -13,7 +13,7 @@ library(cmdstanr)
 make figures folder if doesn't exist
 ```{r}
 if (!dir.exists("figures")) dir.create("figures")
-```
+``` 
 
 
 ```{r}
@@ -26,13 +26,15 @@ data_raw <- read_csv("stan_test_data.csv")
 ```{r}
 ## --- Compile and Fit ---
 # Specify model file path
-stan_file_RL <- here("2ndassignment_clean.stan")
+stan_file_RL <- here("ACM_studygroup3", "2ndassignment_clean.stan")
 
 # Define path for saving fitted model object
 stan_results_dir <- "fitted_models"
-model_file_RL <- here("2ndassigment_fitted.rds")
+model_file_RL <- here("ACM_studygroup3", stan_results_dir, "2ndassigment_fitted.rds")
 
-if (!dir.exists(stan_results_dir)) dir.create(stan_results_dir)
+if (!dir.exists(here("ACM_studygroup3", stan_results_dir))) {
+  dir.create(here("ACM_studygroup3", stan_results_dir), recursive = TRUE)
+}
 ```
 
 ```{r}
@@ -50,7 +52,7 @@ if (regenerate_simulations || !file.exists(model_file_RL)) {
   fit_RL <- mod_RL$sample(
     data = list(n = nrow(data_raw), 
                       choice = data_raw$matcher_choices, 
-                      reward = data_raw$outcomes_matcher,
+                      other = data_raw$mismatcher_choices,
                       prior_alpha_m = 0,
                       prior_alpha_sd = 1.5),      
     seed = 123,                    # For reproducible MCMC sampling
@@ -76,7 +78,7 @@ if (regenerate_simulations || !file.exists(model_file_RL)) {
 # choice 
 ```{r}
 draws <- as_draws_df(fit_RL$draws())
-draws$pos
+draws$
 ```
 
 
@@ -88,7 +90,6 @@ fit_RL$diagnostic_summary()
 
 mcmc_trace(fit_RL$draws(), pars = "alpha")
 
-fit_summary
 ```
 ```{r}
 mcmc_rank_overlay(fit_RL$draws(), pars = "alpha")
