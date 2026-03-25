@@ -74,8 +74,8 @@ print(alpha_prior)
 # Define static parameters
 alpha_mean = 0
 alpha_sd = 1.5
-bias = .2
-experiments = 1000
+bias = .75
+experiments = 100
 trials = 100 # trials within experiments
 
 # set up a list to store results (what are we storing?)
@@ -161,8 +161,9 @@ for (i in 1:experiments) {
 # plotting
 hist(right_choices_sum, 
      xlim=c(0,100),
-     ylab = "Sum of Right Choices",
-     title=paste("Prior Predictive Check, Prior SD = ", alpha_sd)
+     xlab = "Sum of Right Choices",
+     main = paste0("Prior Predictive Check, Prior SD = ", alpha_sd, ", Opponent bias = ", bias),
+     sub = "Simulated experiments = 100"
      )
 ```
 
