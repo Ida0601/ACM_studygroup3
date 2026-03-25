@@ -143,8 +143,8 @@ sbc_generator <- SBC_generator_function(gen_fun)
 Then run simulations using backend and generator. Since this is expensive note that simulations are parrelized using future package. This is wrapped in a conditional that checks if simulations already exists or the regen flag is set to TRUE.
 ```{r}
 ### config
-n_sims = 400 # 100 = 1min    on M1 macbook air
-regen_flag = F
+n_sims = 5000 # 1000 =  a few min    on M1 macbook air
+regen_flag = T
 
 
 #make file place to store sbc results
@@ -180,6 +180,8 @@ sbc_datasets <- readRDS(sbc_data_file)
 }
   
 ```
+
+
 
 After running sims, we plot the rank histogram and ECDF separately for each n_trials value.
 
@@ -217,7 +219,8 @@ We can also do classic median posterior against true value plots using the SBC r
 #get the estimates for alpha
 alpha_results <- sbc_results$stats %>% 
   filter(variable == "alpha")  %>% 
-  mutate(ci_width = q95-q5)
+  mutate(ci_width = q95-q5) %>% 
+  slice_sample(1000)
 
 #add the n_trials by getting the n value from the generated data set
 alpha_results$n_trials <- sapply(alpha_results$sim_id, function(i)     
