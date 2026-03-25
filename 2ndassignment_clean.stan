@@ -13,6 +13,7 @@ data {
   real<lower = 0> prior_alpha_sd; // sd prior_alpha is a continuous number that cannot be lower than 0
 }
 
+// Generate the reward-values
 transformed data {
   array[n] int reward; //array "reward" of length n 
 
