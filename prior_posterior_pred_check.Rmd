@@ -32,7 +32,7 @@ predictive_df <- tibble(
 # 3. Visualize Predictive Overlap
 
 ggplot(predictive_df, aes(x = Value, fill = Type)) +
-  geom_histogram(alpha = 0.6, color = "white") +
+  geom_histogram(position = "identity",alpha = 0.6, color = "white") +
   geom_vline(xintercept = sum(data_raw$matcher_choices), 
              linetype = "dashed", linewidth = 1) +
   scale_fill_manual(values = c("Prior Predictive" = "#ea801c", "Posterior Predictive" = "skyblue")) +
@@ -43,6 +43,10 @@ ggplot(predictive_df, aes(x = Value, fill = Type)) +
     #panel.grid.major = element_line(color = "gray80", size = 0.5),  # major grid lines
     panel.grid.major = element_line(color = "gray90", size = 0.25)  # minor grid lines
   )
+
+ggsave('figures/prior_and_post_pred_check.png', width = 8, height = 6, dpi = 300)
+
 ```
+
 
 

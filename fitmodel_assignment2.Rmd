@@ -78,7 +78,6 @@ if (regenerate_simulations || !file.exists(model_file_RL)) {
 # choice 
 ```{r}
 draws <- as_draws_df(fit_RL$draws())
-draws$
 ```
 
 
