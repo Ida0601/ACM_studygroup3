@@ -18,7 +18,7 @@ library(cmdstanr)
 data_raw <- read_csv("stan_test_data.csv")
 
 # import model fit
-fit <- readRDS("2ndassigment_fitted.rds")
+fit <- readRDS("fitted_models/2ndassigment_fitted.rds")
 ```
 
 # Basic model diagnostics
@@ -46,10 +46,6 @@ It looks nicely random!
 
 Numeric checks:
 To make sure everything is ok, we can use Riccardo's diagnostic battery from the course notes:
-
-```{r}
-fit_summary
-```
 
 
 ```{r}

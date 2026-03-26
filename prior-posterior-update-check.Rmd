@@ -16,7 +16,7 @@ pacman::p_load(here, cmdstanr, tidyverse, posterior, bayesplot, rethinking)
 data_raw <- read_csv("stan_test_data.csv")
 
 # import model fit
-fit <- readRDS("2ndassigment_fitted.rds")
+fit <- readRDS("fitted_models/2ndassigment_fitted.rds")
 ```
 # reasoning about prior-posterior update check
 
@@ -100,7 +100,7 @@ p_update_prob <- ggplot(update_prob_df, aes(x = parameter_value, fill = distribu
   scale_fill_manual(values = c("Prior" = "#ffbaba", "Posterior" = "skyblue")) +
   ggtitle("Prior-Posterior Update: Constrained Scale",
           subtitle = "Healthy = posterior (blue) narrower than prior (red), shifted toward true value (dashed)") +
-  xlab(expression(alpha ~ " (Probability)")) +
+  xlab(expression(alpha ~ "")) +
   ylab("Marginal Density") +
   annotate(
     "text", x = true_alpha_prob, y = Inf, 
